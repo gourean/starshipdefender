@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starship Defender: Explosive Update</title>
+    <style>
+        body {
+            margin: 0;
+            background: #050510;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background: radial-gradient(circle, #1b2735 0%, #090a0f 100%);
+            display: block;
+            cursor: none;
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+        }
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .stat {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px #000;
+        }
+
+        #upgrade-menu {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        button {
+            position: relative;
+            padding: 10px 15px;
+            background: #222;
+            border: 2px solid #444;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        button:hover:not(:disabled) {
+            background: #444;
+            border-color: #00d4ff;
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #333;
+        }
+
+        .key-hint {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00d4ff;
+            color: #000;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #fff;
+        }
+
+        .price {
+            color: #ffcf00;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* Boss Warning Text */
+        #boss-warning {
+            position: absolute;
+            top: 30%;
+            width: 100%;
+            text-align: center;
+            font-size: 50px;
+            color: red;
+            font-weight: bold;
+            text-shadow: 0 0 10px red;
+            display: none;
+            pointer-events: none;
+            animation: flash 0.5s infinite;
+            z-index: 15;
+        }
+
+        @keyframes flash {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Game Over Screen */
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+        }
+
+        #game-over-screen h1 {
+            color: #ff3333;
+            font-size: 4rem;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 20px red;
+        }
+
+        #game-over-screen p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        #restart-btn {
+            font-size: 1.5rem;
+            padding: 15px 40px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #restart-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 20px #00d4ff;
+        }
+
+        /* Start Screen */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 40;
+        }
+
+        #start-screen h1 {
+            font-size: 5rem;
+            background: linear-gradient(to bottom, #00d4ff, #0055ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.5));
+        }
+
+        #start-screen p {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            background: transparent;
+            color: #00d4ff;
+            border: 3px solid #00d4ff;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+            transition: all 0.3s;
+            margin: 0 10px;
+            min-width: 200px;
+        }
+
+        .start-btn:hover {
+            background: #00d4ff;
+            color: #000;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .control-mode {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #222;
+            border: 1px solid #444;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #888;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui">
+        <div class="stat">Credits: <span id="credits">0</span></div>
+        <div class="stat">Score: <span id="score">0</span></div>
+    </div>
+
+    <div id="boss-warning">⚠️ BOSS APPROACHING ⚠️</div>
+
+    <div id="game-over-screen">
+        <h1>Mission Failed</h1>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn" onclick="restartGame()">RESTART SYSTEM</button>
+    </div>
+
+    <div id="start-screen">
+        <h1>Starship Defender</h1>
+        <p>Protect the galaxy from the alien armada</p>
+        <div style="display:flex; justify-content:center;">
+            <button class="start-btn" onclick="startGame(1)">LEVEL 1<br><span style="font-size:12px;opacity:0.8">Low
+                    Cost</span></button>
+            <button class="start-btn" onclick="startGame(2)">LEVEL 2<br><span
+                    style="font-size:12px;opacity:0.8">Standard</span></button>
+        </div>
+    </div>
+
+    <div class="control-mode">Controls: MOUSE or WASD</div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="upgrade-menu">
+        <button id="upg-firerate">
+            <span class="key-hint">[A]</span>
+            Faster Fire
+            <span class="price">$150</span>
+        </button>
+        <button id="upg-damage">
+            <span class="key-hint">[B]</span>
+            Plasma Burn
+            <span class="price">$200</span>
+        </button>
+        <button id="upg-multi">
+            <span class="key-hint">[C]</span>
+            Multi-Shot
+            <span class="price">$500</span>
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const creditEl = document.getElementById('credits');
+        const scoreEl = document.getElementById('score');
+        const bossWarningEl = document.getElementById('boss-warning');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // --- AUDIO SYSTEM ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let bgmOscillators = [];
+        let bgmGainNode = null;
+        let isMuted = false;
+
+        // Noise Buffer for Explosions
+        let noiseBuffer = null;
+        function createNoiseBuffer() {
+            const bufferSize = audioCtx.sampleRate * 2; // 2 seconds of noise
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            return buffer;
+        }
+
+        function startBGM() {
+            if (bgmOscillators.length > 0) return; // Already playing
+
+            bgmGainNode = audioCtx.createGain();
+            bgmGainNode.gain.value = 0.2;
+            bgmGainNode.connect(audioCtx.destination);
+
+            // Space Ambience: Drone + Arp
+            const freqs = [110, 130.81, 196, 220]; // A2, C3, G3, A3 (Am7)
+
+            // Slow drone
+            freqs.forEach((f, i) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.value = f;
+
+                // Detune slightly for spacey feel
+                const lfo = audioCtx.createOscillator();
+                lfo.frequency.value = 0.1 + Math.random() * 0.2;
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.value = 5;
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                lfo.start();
+
+                const g = audioCtx.createGain();
+                g.gain.value = 0.05;
+
+                osc.connect(g);
+                g.connect(bgmGainNode);
+                osc.start();
+
+                bgmOscillators.push(osc);
+                bgmOscillators.push(lfo);
+            });
+        }
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'shoot') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'hit') {
+            } else if (type === 'explosion') {
+                if (!noiseBuffer) noiseBuffer = createNoiseBuffer();
+
+                // Helper for glass shard sounds
+                const playShard = (delay, dur, freq) => {
+                    const src = audioCtx.createBufferSource();
+                    src.buffer = noiseBuffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'highpass';
+                    filter.frequency.value = freq;
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.3, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + delay + dur);
+
+                    src.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    src.start(now + delay);
+                    src.stop(now + delay + dur);
+                };
+
+                // Multiple high-pitch bursts to simulate shattering
+                playShard(0, 0.1, 2000);
+                playShard(0.05, 0.1, 3000);
+                playShard(0.1, 0.2, 1500);
+
+            } else if (type === 'upgrade') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        // Game State
+        canvas.width = window.innerWidth > 600 ? 600 : window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height - 80,
+            width: 40,
+            height: 40,
+            color: '#00d4ff',
+            speed: 5
+        };
+
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height - 80;
+        let controlMode = 'mouse'; // 'mouse' or 'keyboard'
+        let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false };
+
+        let game = {
+            active: false, // Start false, wait for click
+            playerDead: false,
+            credits: 0,
+            score: 0,
+            fireRate: 400,
+            damage: 1,
+            multiShot: 1,
+            lastFired: 0,
+            enemies: [],
+            bullets: [],
+            enemyBullets: [],
+            particles: [],
+            stars: [],
+            bossActive: false,
+            boss: null,
+            nextBossScore: 1000,
+            paused: false
+        };
+
+        // Upgrades
+        const upgrades = {
+            fireRate: { cost: 150 },
+            damage: { cost: 200 },
+            multi: { cost: 500 }
+        };
+
+        // Initialize Stars
+        for (let i = 0; i < 100; i++) {
+            game.stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, s: Math.random() * 2 });
+        }
+
+        // --- CONTROLS ---
+        // --- CONTROLS ---
+        canvas.addEventListener('mousemove', (e) => {
+            // Switch to mouse mode on movement
+            if (controlMode !== 'mouse') controlMode = 'mouse';
+
+            // We allow mouse tracking even when dead so you can restart comfortably, 
+            // but the player ship won't move if dead.
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        // WASD / Arrows
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key] = true;
+                controlMode = 'keyboard';
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key) || keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key] = false;
+            }
+        });
+
+        // Upgrade Functions
+        function buyFireRate() {
+            if (game.credits >= upgrades.fireRate.cost && !game.playerDead) {
+                playSound('upgrade');
+                game.credits -= upgrades.fireRate.cost;
+                game.fireRate *= 0.8;
+                upgrades.fireRate.cost = Math.floor(upgrades.fireRate.cost * 1.5);
+                updateUI();
+                createExplosion(player.x, player.y, '#00d4ff', 5);
+            }
+        }
+
+        function buyDamage() {
+            if (game.credits >= upgrades.damage.cost && !game.playerDead) {
+                playSound('upgrade');
+                game.credits -= upgrades.damage.cost;
+                game.damage += 1;
+                upgrades.damage.cost = Math.floor(upgrades.damage.cost * 1.8);
+                updateUI();
+                createExplosion(player.x, player.y, '#ff4400', 5);
+            }
+        }
+
+        function buyMulti() {
+            if (game.credits >= upgrades.multi.cost && !game.playerDead) {
+                playSound('upgrade');
+                game.credits -= upgrades.multi.cost;
+                game.multiShot += 1;
+                upgrades.multi.cost = Math.floor(upgrades.multi.cost * 3);
+                updateUI();
+                createExplosion(player.x, player.y, '#ffff00', 5);
+            }
+        }
+
+        // Button Clicks
+        document.getElementById('upg-firerate').onclick = buyFireRate;
+        document.getElementById('upg-damage').onclick = buyDamage;
+        document.getElementById('upg-multi').onclick = buyMulti;
+
+        // Keyboard Shortcuts (A, B, C)
+        document.addEventListener('keydown', (e) => {
+            if (game.active === false) return; // Ignore if game not started (unless space to start? maybe later)
+            if (game.playerDead) return;
+            if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+            switch (e.key.toLowerCase()) {
+                case 'a':
+                    // Only buy if not using WASD for movement (check context? No, 'a' is left usually)
+                    // Correction: User might map A to left. Let's make upgrades strictly 1, 2, 3 or Click?
+                    // User request says "Control controllable by keyboards". 
+                    // WASD is standard. A conflicts.
+                    // Let's change upgrade hotkeys to 1, 2, 3
+                    break;
+                case '1': buyFireRate(); break;
+                case '2': buyDamage(); break;
+                case '3': buyMulti(); break;
+                case ' ': // Spacebar for Pause
+                    game.paused = !game.paused;
+                    // Optional: Suspend audio context on pause to stop all sounds immediately?
+                    // Or just let BGM flow. User asked for "pause (press space) function".
+                    // Typically pausing visually is expected.
+                    break;
+            }
+        });
+
+        function updateUI() {
+            creditEl.innerText = game.credits;
+            scoreEl.innerText = game.score;
+            document.getElementById('upg-firerate').querySelector('.price').innerText = `$${upgrades.fireRate.cost}`;
+            document.getElementById('upg-damage').querySelector('.price').innerText = `$${upgrades.damage.cost}`;
+            document.getElementById('upg-multi').querySelector('.price').innerText = `$${upgrades.multi.cost}`;
+
+            document.getElementById('upg-firerate').disabled = game.credits < upgrades.fireRate.cost || game.playerDead;
+            document.getElementById('upg-damage').disabled = game.credits < upgrades.damage.cost || game.playerDead;
+            document.getElementById('upg-multi').disabled = game.credits < upgrades.multi.cost || game.playerDead;
+        }
+
+        function spawnEnemy() {
+            const size = 30 + Math.random() * 20;
+            let spawnY = -size;
+            if (player.y < 200) spawnY -= 200;
+
+            // Calculate HP and MaxHP
+            const hp = 1 + Math.floor(game.score / 300);
+
+            game.enemies.push({
+                x: Math.random() * (canvas.width - size),
+                y: spawnY,
+                width: size,
+                height: size,
+                speed: 1 + Math.random() * 2 + (game.score / 1000),
+                hp: hp,
+                maxHp: hp
+            });
+        }
+
+        function spawnBoss() {
+            game.bossActive = true;
+            bossWarningEl.style.display = 'block';
+            playSound('upgrade'); // Use chime as warning sound
+
+            setTimeout(() => {
+                bossWarningEl.style.display = 'none';
+                game.boss = {
+                    x: canvas.width / 2 - 60,
+                    y: -150,
+                    targetY: 60,
+                    width: 120,
+                    height: 100,
+                    hp: 200 + (game.score / 2),
+                    maxHp: 200 + (game.score / 2),
+                    vx: 2,
+                    lastShot: 0,
+                    fireRate: 800
+                };
+            }, 2000);
+        }
+
+        function spawnBullet() {
+            if (game.playerDead) return; // Can't shoot if dead
+
+            const now = Date.now();
+            if (now - game.lastFired > game.fireRate) {
+                playSound('shoot');
+
+                // Spread Shot Logic
+                const count = game.multiShot;
+                for (let i = 0; i < count; i++) {
+                    // Default straight up angle is -PI/2
+                    let angle = -Math.PI / 2;
+
+                    // If multiple shots, spread them out by ~8.5 degrees (0.15 radians) per shot
+                    if (count > 1) {
+                        const spreadAmount = 0.15;
+                        const offset = (i - (count - 1) / 2) * spreadAmount;
+                        angle += offset;
+                    }
+
+                    const speed = 7;
+                    game.bullets.push({
+                        x: player.x,
+                        y: player.y - 20,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed
+                    });
+                }
+                game.lastFired = now;
+            }
+        }
+
+        function createExplosion(x, y, color, count = 8) {
+            for (let i = 0; i < count; i++) {
+                game.particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        function killPlayer() {
+            if (game.playerDead) return; // Already dying
+            game.playerDead = true;
+
+            // Massive explosion
+            createExplosion(player.x, player.y, '#00d4ff', 60);
+            createExplosion(player.x, player.y, '#ffffff', 20);
+            playSound('explosion');
+
+            updateUI(); // Disable buttons
+
+            // Delay the actual game over screen to show the explosion
+            setTimeout(() => {
+                showGameOverScreen();
+            }, 2000);
+        }
+
+        function showGameOverScreen() {
+            game.active = false;
+            finalScoreEl.innerText = game.score;
+            gameOverScreen.style.display = 'flex';
+            document.body.style.cursor = 'default';
+            canvas.style.cursor = 'default';
+        }
+
+        function restartGame() {
+            game.active = true;
+            game.playerDead = false;
+            game.score = 0;
+            game.credits = 0;
+            game.enemies = [];
+            game.bullets = [];
+            game.enemyBullets = [];
+            game.bossActive = false;
+            game.boss = null;
+            game.nextBossScore = 1000;
+            game.paused = false;
+
+            // Reset stats
+            game.damage = 1;
+            game.multiShot = 1;
+            game.fireRate = 400;
+
+            if (game.level === 1) {
+                upgrades.fireRate.cost = 100;
+                upgrades.damage.cost = 100;
+                upgrades.multi.cost = 300;
+            } else {
+                upgrades.fireRate.cost = 150;
+                upgrades.damage.cost = 200;
+                upgrades.multi.cost = 500;
+            }
+
+            // Reset Player Pos
+            mouseX = canvas.width / 2;
+            mouseY = canvas.height - 80;
+            player.x = mouseX;
+            player.y = mouseY;
+
+            gameOverScreen.style.display = 'none';
+            canvas.style.cursor = 'none';
+
+            updateUI();
+            draw();
+        }
+
+        function startGame(level) {
+            game.level = level || 2;
+            // Resume audio 
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            startBGM();
+
+            document.getElementById('start-screen').style.display = 'none';
+            game.active = true;
+            restartGame();
+        }
+
+        function checkRectCollision(r1, r2) {
+            return r1.x < r2.x + r2.width &&
+                r1.x + r1.width > r2.x &&
+                r1.y < r2.y + r2.height &&
+                r1.y + r1.height > r2.y;
+        }
+
+        function update() {
+            // If game is totally paused (UI open), stop updating
+            if (!game.active) return;
+            if (game.paused) return; // Pause logic
+
+            // Only update player position if alive
+            if (!game.playerDead) {
+                if (controlMode === 'mouse') {
+                    player.x = Math.max(20, Math.min(canvas.width - 20, mouseX));
+                    player.y = Math.max(20, Math.min(canvas.height - 20, mouseY));
+                } else {
+                    // Keyboard Control
+                    if (keys.ArrowUp || keys.w) player.y -= player.speed;
+                    if (keys.ArrowDown || keys.s) player.y += player.speed;
+                    if (keys.ArrowLeft || keys.a) player.x -= player.speed;
+                    if (keys.ArrowRight || keys.d) player.x += player.speed;
+
+                    // Bounds
+                    player.x = Math.max(20, Math.min(canvas.width - 20, player.x));
+                    player.y = Math.max(20, Math.min(canvas.height - 20, player.y));
+
+                    // Update mouse vars so switching back doesn't jump instantly
+                    mouseX = player.x;
+                    mouseY = player.y;
+                }
+                spawnBullet();
+            }
+
+            // Background
+            game.stars.forEach(s => {
+                s.y += (game.bossActive ? 4 : 0.5 + (game.score / 5000));
+                if (s.y > canvas.height) s.y = 0;
+            });
+
+            if (game.score >= game.nextBossScore && !game.bossActive && !game.playerDead) {
+                spawnBoss();
+                game.nextBossScore += 1000;
+            }
+
+            // Boss Logic
+            if (game.bossActive && game.boss) {
+                let b = game.boss;
+                if (b.y < b.targetY) b.y += 1;
+                b.x += b.vx;
+                if (b.x <= 0 || b.x + b.width >= canvas.width) b.vx *= -1;
+
+                // Shoot
+                let now = Date.now();
+                if (now - b.lastShot > b.fireRate && !game.playerDead) {
+                    playSound('shoot');
+                    for (let k = -1; k <= 1; k++) {
+                        game.enemyBullets.push({
+                            x: b.x + b.width / 2,
+                            y: b.y + b.height,
+                            vx: k * 2,
+                            vy: 5,
+                            color: '#ff00ff'
+                        });
+                    }
+                    b.lastShot = now;
+                }
+
+                // Bullet Hit Boss
+                game.bullets.forEach((bull, bi) => {
+                    if (bull.x > b.x && bull.x < b.x + b.width && bull.y > b.y && bull.y < b.y + b.height) {
+                        b.hp -= game.damage;
+                        game.bullets.splice(bi, 1);
+                        createExplosion(bull.x, bull.y, '#eda', 2);
+                        playSound('hit');
+                        if (b.hp <= 0) {
+                            createExplosion(b.x + b.width / 2, b.y + b.height / 2, '#ff0000', 50);
+                            playSound('explosion');
+                            game.bossActive = false;
+                            game.boss = null;
+                            game.credits += 500;
+                            game.score += 200;
+                            game.enemyBullets = [];
+                            updateUI();
+                        }
+                    }
+                });
+
+                // Player Crash into Boss
+                if (!game.playerDead && checkRectCollision({ x: player.x - 20, y: player.y, width: 40, height: 40 }, b)) {
+                    killPlayer();
+                }
+            } else if (!game.bossActive && !game.playerDead) {
+                if (Math.random() < 0.02) spawnEnemy();
+            }
+
+            // Player Bullets
+            game.bullets.forEach((b, i) => {
+                // Use vector velocity
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Boundaries
+                if (b.y < -50 || b.x < -50 || b.x > canvas.width + 50) game.bullets.splice(i, 1);
+            });
+
+            // Enemy Bullets
+            game.enemyBullets.forEach((b, i) => {
+                b.x += b.vx;
+                b.y += b.vy;
+                if (b.y > canvas.height || b.x < 0 || b.x > canvas.width) game.enemyBullets.splice(i, 1);
+
+                if (!game.playerDead && Math.abs(b.x - player.x) < 15 && Math.abs(b.y - player.y) < 20) {
+                    killPlayer();
+                }
+            });
+
+            // Enemies
+            game.enemies.forEach((e, i) => {
+                e.y += e.speed;
+
+                // Crash
+                if (!game.playerDead && Math.abs(e.x - player.x) < 30 && Math.abs(e.y - player.y) < 30) {
+                    killPlayer();
+                }
+
+                if (e.y > canvas.height) {
+                    game.enemies.splice(i, 1);
+                    game.score = Math.max(0, game.score - 50);
+                }
+
+                game.bullets.forEach((b, bi) => {
+                    if (b.x < e.x + e.width && b.x + 5 > e.x && b.y < e.y + e.height && b.y + 10 > e.y) {
+                        e.hp -= game.damage;
+                        game.bullets.splice(bi, 1);
+                        playSound('hit');
+                        if (e.hp <= 0) {
+                            createExplosion(e.x + e.width / 2, e.y + e.height / 2, '#ff4400');
+                            playSound('explosion');
+                            game.enemies.splice(i, 1);
+                            game.credits += 10;
+                            game.score += 10;
+                            updateUI();
+                        }
+                    }
+                });
+            });
+
+            // Particles
+            game.particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                if (p.life <= 0) game.particles.splice(i, 1);
+            });
+        }
+
+        function draw() {
+            if (!game.active) return; // Stop drawing if game over screen is open
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Stars
+            ctx.fillStyle = "white";
+            game.stars.forEach(s => ctx.fillRect(s.x, s.y, s.s, s.s));
+
+            // Player - Only draw if alive
+            if (!game.playerDead) {
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y - 20); // Nose
+                ctx.lineTo(player.x - 20, player.y + 20);
+                ctx.lineTo(player.x + 20, player.y + 20);
+                ctx.closePath();
+                ctx.fill();
+
+                // Engine Trail
+                ctx.fillStyle = `rgba(255, 170, 0, ${0.5 + Math.random() * 0.5})`;
+                ctx.beginPath();
+                ctx.moveTo(player.x - 5, player.y + 20);
+                ctx.lineTo(player.x + 5, player.y + 20);
+                ctx.lineTo(player.x, player.y + 40 + Math.random() * 10);
+                ctx.fill();
+            }
+
+            // Bullets
+            ctx.fillStyle = "#00ffff";
+            game.bullets.forEach(b => {
+                // Draw bullets rotated to match their vector?
+                // Simple circle is easier for spread shots
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Enemy Bullets
+            game.enemyBullets.forEach(b => {
+                ctx.fillStyle = b.color || '#ff00ff';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Enemies
+            game.enemies.forEach(e => {
+                const hpPct = e.hp / e.maxHp;
+                const hue = Math.max(0, Math.min(120, hpPct * 120));
+                ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+
+                ctx.beginPath();
+                ctx.moveTo(e.x, e.y);
+                ctx.lineTo(e.x + e.width, e.y);
+                ctx.lineTo(e.x + e.width / 2, e.y + e.height);
+
+                ctx.moveTo(e.x, e.y);
+                ctx.lineTo(e.x - 5, e.y - 10);
+                ctx.lineTo(e.x + 10, e.y);
+
+                ctx.moveTo(e.x + e.width, e.y);
+                ctx.lineTo(e.x + e.width + 5, e.y - 10);
+                ctx.lineTo(e.x + e.width - 10, e.y);
+
+                ctx.fill();
+
+                ctx.fillStyle = `rgba(255, 0, 0, 0.5)`;
+                ctx.fillRect(e.x + e.width / 2 - 2, e.y - 5, 4, -5);
+            });
+
+            // Boss
+            if (game.boss && game.bossActive) {
+                let b = game.boss;
+                ctx.fillStyle = "#440000";
+                ctx.strokeStyle = "#ff0000";
+                ctx.lineWidth = 4;
+                ctx.fillRect(b.x, b.y, b.width, b.height);
+                ctx.strokeRect(b.x, b.y, b.width, b.height);
+
+                ctx.fillStyle = "#ff0000";
+                ctx.fillRect(b.x + 20, b.y + b.height - 20, 20, 20);
+                ctx.fillRect(b.x + b.width - 40, b.y + b.height - 20, 20, 20);
+
+                ctx.fillStyle = "#333";
+                ctx.fillRect(b.x, b.y - 20, b.width, 10);
+                ctx.fillStyle = "#00ff00";
+                let hpPct = Math.max(0, b.hp / b.maxHp);
+                ctx.fillRect(b.x, b.y - 20, b.width * hpPct, 10);
+            }
+
+            // Particles
+            game.particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 3, 3);
+            });
+            ctx.globalAlpha = 1;
+
+            update();
+            if (game.paused) {
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white";
+                ctx.font = "40px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        // Start
+        // Update Upgrade Button Hints to 1, 2, 3
+        document.getElementById('upg-firerate').querySelector('.key-hint').innerText = '[1]';
+        document.getElementById('upg-damage').querySelector('.key-hint').innerText = '[2]';
+        document.getElementById('upg-multi').querySelector('.key-hint').innerText = '[3]';
+
+        updateUI();
+
+        // Pause Overlay
+        function drawPauseOverlay() {
+            if (game.paused) {
+                ctx.fillStyle = "rgba(0,0,0,0.5)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "white";
+                ctx.font = "40px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("PAUSED", canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        // Hook into draw loop (since draw is recursive via requestAnimationFrame, we need to inject it or modify draw)
+        // Actually, let's just modify the draw function.
+        // But draw() is defined earlier. Let's append to it? No, simpler to just redefine draw or ensure it's in there.
+        // Wait, I can just replace the end of draw() in the previous tool call? 
+        // No, I'll use replace_file_content to insert it INTO draw function.
+        // I will do that in a separate chunk targeting the end of draw function.
+
+        draw();
+    </script>
+</body>
+
+</html>
